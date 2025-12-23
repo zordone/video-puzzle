@@ -43,7 +43,7 @@ function onFrame() {
   for (let { canvas, context, originalX, originalY, isEmpty } of blocks) {
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
-    if (isEmpty) continue;
+    canvas.style.opacity = isEmpty ? "0.2" : "1";
     const originalIndex = originalY * SPLIT_WIDTH + originalX;
     context.drawImage(
       video,
@@ -56,10 +56,10 @@ function onFrame() {
       canvasWidth,
       canvasHeight
     );
-    context.font = "3rem sans-serif";
-    context.fillStyle = "#0F04";
+    context.font = "3rem Rubik, system-ui, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "middle";
+    context.fillStyle = "#7e9b94";
     context.fillText(originalIndex, canvasWidth / 2, canvasHeight / 2);
   }
   if (!video.paused && !video.ended) {
@@ -67,15 +67,26 @@ function onFrame() {
   }
 }
 
+function isAdjacent(blockA, blockB) {
+  const xDiff = Math.abs(blockA.currentX - blockB.currentX);
+  const yDiff = Math.abs(blockA.currentY - blockB.currentY);
+  return (xDiff === 1 && yDiff === 0) || (xDiff === 0 && yDiff === 1);
+}
+
+function updateBlocks() {
+  const emptyBlock = blocks.find((block) => block.isEmpty);
+  for (let block of blocks) {
+    const { canvas, currentX, currentY } = block;
+    const order = currentY * SPLIT_WIDTH + currentX;
+    canvas.style.order = order;
+    canvas.classList.toggle("active", isAdjacent(block, emptyBlock));
+  }
+}
+
 function onCanvasClick(event) {
   const clickedBlock = blocks.find((block) => block.canvas === event.target);
   const emptyBlock = blocks.find((block) => block.isEmpty);
-  // is adjacent?
-  const xDiff = Math.abs(emptyBlock.currentX - clickedBlock.currentX);
-  const yDiff = Math.abs(emptyBlock.currentY - clickedBlock.currentY);
-  const isAdjacent =
-    (xDiff === 1 && yDiff === 0) || (xDiff === 0 && yDiff === 1);
-  if (!isAdjacent) return;
+  if (!isAdjacent(clickedBlock, emptyBlock)) return;
   // swap
   document.startViewTransition(() => {
     const { currentX: tempX, currentY: tempY } = emptyBlock;
@@ -83,10 +94,7 @@ function onCanvasClick(event) {
     emptyBlock.currentY = clickedBlock.currentY;
     clickedBlock.currentX = tempX;
     clickedBlock.currentY = tempY;
-    for ({ canvas, currentX, currentY } of blocks) {
-      const order = currentY * SPLIT_WIDTH + currentX;
-      canvas.style.order = order;
-    }
+    updateBlocks();
   });
 }
 
@@ -95,7 +103,6 @@ video.currentTime = 15;
 
 window.stop = () => {
   video.pause();
-  clearInterval(timer);
 };
 
 window.shuffle = () => {
@@ -108,10 +115,7 @@ window.shuffle = () => {
     two.currentX = tempX;
     two.currentY = tempY;
   }
-  document.startViewTransition(() => {
-    for ({ canvas, currentX, currentY } of blocks) {
-      const order = currentY * SPLIT_WIDTH + currentX;
-      canvas.style.order = order;
-    }
-  });
+  document.startViewTransition(updateBlocks);
 };
+
+setTimeout(window.shuffle, 2000);
