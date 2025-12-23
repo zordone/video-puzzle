@@ -1,0 +1,44 @@
+/* only use border radius if we can apply it during the transition too */
+@supports (view-transition-group: contain) {
+  :root {
+    --radius: 1.5rem;
+  }
+}
+
+::view-transition-group(container) {
+  border-radius: var(--radius);
+  overflow: clip;
+}
+
+::view-transition-group(*) {
+  animation-duration: 400ms;
+  transition-timing-function: ease-in-out;
+  overflow: clip;
+}
+
+body {
+  background: #222;
+}
+
+video {
+  width: 500px;
+
+  __opacity: 0;
+  __position: absolute;
+  __pointer-events: none;
+}
+
+#container {
+  --columns: 2;
+  display: inline-grid;
+  grid-template-columns: repeat(var(--columns), 0fr);
+  gap: 0.2rem;
+  border-radius: var(--radius);
+  overflow: clip;
+  view-transition-name: container;
+  view-transition-group: contain;
+}
+
+canvas {
+  view-transition-name: match-element;
+}
