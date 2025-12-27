@@ -5,9 +5,22 @@ const SPLIT_HEIGHT = 3;
 const video = document.querySelector("video");
 video.onloadeddata = onFrame;
 video.onplay = onFrame;
+video.onended = checkWin;
 
 const container = document.querySelector("#container");
 container.style = `--columns: ${SPLIT_WIDTH}`;
+
+const dialog = document.querySelector("#dialog");
+const dialogTitle = dialog.querySelector(".title");
+const dialogMessage = dialog.querySelector(".subtitle");
+
+const restart = document.querySelector("#restart");
+restart.onclick = () => {
+  dialog.close();
+  video.currentTime = 0;
+  video.play();
+  shuffle();
+};
 
 // init blocks
 const blocks = [];
@@ -83,29 +96,48 @@ function updateBlocks() {
   }
 }
 
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = String(Math.floor(seconds % 60)).padStart(2, "0");
+  return `${mins}:${secs}`;
+}
+
+function checkWin() {
+  const isPlaying = !video.paused && !video.ended;
+  const isSolved = blocks.every(
+    ({ originalY, originalX, currentX, currentY }) =>
+      currentX === originalX && currentY === originalY
+  );
+  if (isPlaying && isSolved) {
+    const time = formatTime(video.currentTime);
+    dialogTitle.textContent = "Congratulations!";
+    dialogMessage.textContent = `You solved the puzzle in ${time}.`;
+    setTimeout(() => dialog.showModal(), 400);
+  } else if (!isPlaying && !isSolved) {
+    dialogTitle.textContent = "Game Over!";
+    dialogMessage.textContent =
+      "You failed to solve the puzzle before the video ended.";
+    dialog.showModal();
+  }
+}
+
 function onCanvasClick(event) {
   const clickedBlock = blocks.find((block) => block.canvas === event.target);
   const emptyBlock = blocks.find((block) => block.isEmpty);
   if (!isAdjacent(clickedBlock, emptyBlock)) return;
-  // swap
-  document.startViewTransition(() => {
-    const { currentX: tempX, currentY: tempY } = emptyBlock;
-    emptyBlock.currentX = clickedBlock.currentX;
-    emptyBlock.currentY = clickedBlock.currentY;
-    clickedBlock.currentX = tempX;
-    clickedBlock.currentY = tempY;
-    updateBlocks();
-  });
+  document
+    .startViewTransition(() => {
+      const { currentX: tempX, currentY: tempY } = emptyBlock;
+      emptyBlock.currentX = clickedBlock.currentX;
+      emptyBlock.currentY = clickedBlock.currentY;
+      clickedBlock.currentX = tempX;
+      clickedBlock.currentY = tempY;
+      updateBlocks();
+    })
+    .finished.then(checkWin);
 }
 
-// TODO: remove test stuff
-video.currentTime = 15;
-
-window.stop = () => {
-  video.pause();
-};
-
-window.shuffle = () => {
+function shuffle() {
   for (let i = 0; i < blocks.length; i++) {
     const one = blocks[i];
     const two = blocks[Math.floor(Math.random() * blocks.length)];
@@ -116,6 +148,13 @@ window.shuffle = () => {
     two.currentY = tempY;
   }
   document.startViewTransition(updateBlocks);
+}
+
+// TODO: remove test stuff
+video.currentTime = 15;
+
+window.stop = () => {
+  video.pause();
 };
 
-setTimeout(window.shuffle, 2000);
+setTimeout(shuffle, 2000);

@@ -8,21 +8,32 @@
     <link rel="shortcut icon" href="favicon.png" type="image/png" />
   </head>
   <body>
-    <h1>Video Puzzle</h1>
-    <h2>
+    <h1 class="title">Video Puzzle</h1>
+    <p class="subtitle">
       Slide the pieces adjacent to the blank space to solve the puzzle before
       the video ends.
-    </h2>
+    </p>
     <video
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
       _src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
+      _src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
       autoplay
       muted
       controls
       autofocus
     ></video>
+    <div id="container">
+      <!-- blocks will be inserted here -->
+    </div>
 
-    <div id="container"></div>
+    <dialog id="dialog" closedby="any">
+      <p class="title"><!-- dynamic --></p>
+      <p class="subtitle"><!-- dynamic --></p>
+      <div class="buttons">
+        <button commandfor="dialog" command="close">Close</button>
+        <button id="restart">Restart</button>
+      </div>
+    </dialog>
 
     <script src="script.js" defer></script>
   </body>
