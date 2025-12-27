@@ -7,6 +7,7 @@
   --light: #cbf6ec;
   --shadow: rgb(from var(--dark) r g b / 0.8);
 
+  accent-color: var(--dark);
   overscroll-behavior: none;
   font: 16px "Knewave", system-ui, sans-serif;
   color: var(--dark);
@@ -25,7 +26,7 @@
 }
 
 ::view-transition-group(container) {
-  box-shadow: 0 0 2rem var(--shadow);
+  box-shadow: 0 0 3rem var(--shadow);
   border-radius: var(--radius);
   overflow: clip;
 }
@@ -84,9 +85,14 @@ video {
 
 canvas {
   view-transition-name: match-element;
+  z-index: 1;
   cursor: not-allowed;
   &.active {
     cursor: pointer;
+  }
+  &.empty {
+    z-index: 0;
+    opacity: 0.2;
   }
 }
 
@@ -119,9 +125,63 @@ button {
   padding: 0.5rem 1rem;
   box-shadow: 0 0 1rem var(--shadow);
   cursor: pointer;
-
   &:hover {
     background: var(--dark);
     color: var(--mid);
+  }
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  margin-top: 1rem;
+
+  @media screen and (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0;
+    label {
+      margin-top: 0.5rem;
+    }
+  }
+
+  label {
+    justify-self: start;
+    align-self: center;
+  }
+
+  .step-select {
+    display: flex;
+    border-radius: var(--radius);
+    box-shadow: 0 0 1rem var(--shadow);
+    overflow: hidden;
+    select {
+      flex: 1 0 auto;
+      font-size: 1.5rem;
+      border: none;
+      border-radius: 0;
+      appearance: base-select;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      min-width: 13rem; /* TODO: size to the longest option */
+      &::picker-icon {
+        display: none;
+      }
+    }
+    button {
+      flex: 0 0 auto;
+      box-shadow: none;
+      border-radius: 0;
+      padding: 0 0.5rem;
+      font-size: 2.2rem;
+      line-height: 1;
+      &.prev {
+        border-radius: var(--radius) 0 0 var(--radius);
+      }
+      &.next {
+        border-radius: 0 var(--radius) var(--radius) 0;
+      }
+    }
   }
 }

@@ -13,25 +13,102 @@
       Slide the pieces adjacent to the blank space to solve the puzzle before
       the video ends.
     </p>
-    <video
-      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-      _src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-      _src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
-      autoplay
-      muted
-      controls
-      autofocus
-    ></video>
+    <video muted></video>
     <div id="container">
       <!-- blocks will be inserted here -->
     </div>
 
-    <dialog id="dialog" closedby="any">
+    <dialog id="dialog-end" closedby="any">
       <p class="title"><!-- dynamic --></p>
       <p class="subtitle"><!-- dynamic --></p>
       <div class="buttons">
-        <button commandfor="dialog" command="close">Close</button>
-        <button id="restart">Restart</button>
+        <button id="new-game">New Game</button>
+        <button commandfor="dialog-end" command="close">Close</button>
+      </div>
+    </dialog>
+
+    <dialog id="dialog-start" closedby="any">
+      <p class="title">New Game</p>
+      <div class="settings-grid">
+        <label for="video" class="subtitle">Video</label>
+        <div class="step-select">
+          <button class="prev">⏴</button>
+          <select id="video" inert>
+            <option
+              value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            >
+              Big Buck Bunny
+            </option>
+            <option
+              value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+            >
+              Elephant's Dream
+            </option>
+            <option
+              value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
+              selected
+            >
+              Sintel
+            </option>
+          </select>
+          <button class="next">⏵</button>
+        </div>
+
+        <label for="splitWidth" class="subtitle">Horizontal Tiles</label>
+        <div class="step-select">
+          <button class="prev">⏴</button>
+          <select id="splitWidth" inert>
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+          </select>
+          <button class="next">⏵</button>
+        </div>
+
+        <label for="splitHeight" class="subtitle">Vertical Tiles</label>
+        <div class="step-select">
+          <button class="prev">⏴</button>
+          <select id="splitHeight" inert>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+          </select>
+          <button class="next">⏵</button>
+        </div>
+
+        <label for="shuffleSteps" class="subtitle">Shuffle</label>
+        <div class="step-select">
+          <button class="prev">⏴</button>
+          <select id="shuffleSteps" inert>
+            <option value="30">Light</option>
+            <option value="90" selected>Medium</option>
+            <option value="270">Strong</option>
+          </select>
+          <button class="next">⏵</button>
+        </div>
+
+        <label for="showNumbers" class="subtitle">Show Numbers</label>
+        <div class="step-select">
+          <button class="prev">⏴</button>
+          <select id="showNumbers" inert>
+            <option value="yes" selected>Yes</option>
+            <option value="no">No</option>
+          </select>
+          <button class="next">⏵</button>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="start-game">Start</button>
+        <button commandfor="dialog-start" command="close">Cancel</button>
       </div>
     </dialog>
 

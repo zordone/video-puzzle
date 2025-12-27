@@ -1,87 +1,79 @@
-const SPLIT_WIDTH = 4;
-const SPLIT_HEIGHT = 3;
-const SHUFFLE_STEPS = 150;
-const SHOW_NUMBERS = true;
+const blocks = [];
 
 // init dom
 const video = document.querySelector("video");
-video.onloadeddata = onFrame;
-video.onplay = onFrame;
+video.onloadeddata = onVideoFrame;
+video.onplay = onVideoFrame;
 video.onended = checkWin;
 
 const container = document.querySelector("#container");
-container.style = `--columns: ${SPLIT_WIDTH}`;
 
-const dialog = document.querySelector("#dialog");
-const dialogTitle = dialog.querySelector(".title");
-const dialogMessage = dialog.querySelector(".subtitle");
+const dialogEnd = document.querySelector("#dialog-end");
+const dialogEndTitle = dialogEnd.querySelector(".title");
+const dialogEndMessage = dialogEnd.querySelector(".subtitle");
 
-const restart = document.querySelector("#restart");
-restart.onclick = () => {
-  dialog.close();
-  video.currentTime = 0;
-  video.play();
-  shuffle();
+const dialogStart = document.querySelector("#dialog-start");
+
+document.querySelector("#start-game").onclick = startGame;
+document.querySelector("#new-game").onclick = newGame;
+
+document.querySelectorAll(".step-select button").forEach((button) => {
+  button.onclick = onSettingChanged;
+});
+
+// init settings
+const defaultSettings = {
+  video:
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  splitWidth: "4",
+  splitHeight: "3",
+  shuffleSteps: "100",
+  showNumbers: "yes",
 };
 
-// init blocks
-const blocks = [];
-for (let y = 0; y < SPLIT_HEIGHT; y += 1) {
-  for (let x = 0; x < SPLIT_WIDTH; x += 1) {
-    const canvas = document.createElement("canvas");
-    canvas.width = 100;
-    canvas.height = 100;
-    canvas.onclick = onCanvasClick;
-    const context = canvas.getContext("2d");
-    const index = y * SPLIT_WIDTH + x;
-    container.appendChild(canvas);
-    blocks.push({
-      canvas,
-      context,
-      originalIndex: index,
-      originalX: x,
-      originalY: y,
-      currentX: x,
-      currentY: y,
-      isEmpty: false,
-    });
-  }
-}
-blocks.at(-1).isEmpty = true;
+const settings = localStorage.getItem("settings")
+  ? JSON.parse(localStorage.getItem("settings"))
+  : defaultSettings;
 
-// copy video frame to blocks
-function onFrame() {
-  const blockWidth = video.videoWidth / SPLIT_WIDTH;
-  const blockHeight = video.videoHeight / SPLIT_HEIGHT;
-  const canvasWidth = video.clientWidth / SPLIT_WIDTH;
-  const canvasHeight = video.clientHeight / SPLIT_HEIGHT;
-  for (let { canvas, context, originalX, originalY, isEmpty } of blocks) {
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    canvas.style.opacity = isEmpty ? "0.2" : "1";
-    const originalIndex = originalY * SPLIT_WIDTH + originalX;
-    context.drawImage(
-      video,
-      blockWidth * originalX,
-      blockHeight * originalY,
-      blockWidth,
-      blockHeight,
-      0,
-      0,
-      canvasWidth,
-      canvasHeight
-    );
-    if (SHOW_NUMBERS) {
-      context.font = "3rem Rubik, system-ui, sans-serif";
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.fillStyle = "#7e9b94";
-      context.fillText(originalIndex, canvasWidth / 2, canvasHeight / 2);
+Object.entries(settings).forEach(([key, value]) => {
+  const select = document.getElementById(key);
+  select.value = value;
+});
+
+function initBlocks() {
+  blocks.length = 0;
+  container.innerHTML = "";
+  const lastIndex = settings.splitWidth * settings.splitHeight - 1;
+  for (let y = 0; y < settings.splitHeight; y += 1) {
+    for (let x = 0; x < settings.splitWidth; x += 1) {
+      const index = y * settings.splitWidth + x;
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = 0;
+      canvas.height = 0;
+      canvas.className = index === lastIndex ? "empty" : "";
+      canvas.onclick = onCanvasClick;
+      container.appendChild(canvas);
+      blocks.push({
+        canvas,
+        context,
+        originalIndex: index,
+        originalX: x,
+        originalY: y,
+        currentX: x,
+        currentY: y,
+      });
     }
   }
-  if (!video.paused && !video.ended) {
-    video.requestVideoFrameCallback(onFrame);
+}
+
+function applySettings() {
+  if (video.src !== settings.video) {
+    video.src = settings.video;
   }
+  container.style = `--columns: ${settings.splitWidth}`;
+  initBlocks();
+  updateBlocks();
 }
 
 function isAdjacent(blockA, blockB) {
@@ -99,10 +91,10 @@ function swapBlocks(blockA, blockB) {
 }
 
 function updateBlocks() {
-  const emptyBlock = blocks.find((block) => block.isEmpty);
+  const emptyBlock = blocks.at(-1);
   for (let block of blocks) {
     const { canvas, currentX, currentY } = block;
-    const order = currentY * SPLIT_WIDTH + currentX;
+    const order = currentY * settings.splitWidth + currentX;
     canvas.style.order = order;
     canvas.classList.toggle("active", isAdjacent(block, emptyBlock));
   }
@@ -122,20 +114,55 @@ function checkWin() {
   );
   if (isPlaying && isSolved) {
     const time = formatTime(video.currentTime);
-    dialogTitle.textContent = "Congratulations!";
-    dialogMessage.textContent = `You solved the puzzle in ${time}.`;
-    setTimeout(() => dialog.showModal(), 400);
+    dialogEndTitle.textContent = "Congratulations!";
+    dialogEndMessage.textContent = `You solved the puzzle in ${time}.`;
+    setTimeout(() => dialogEnd.showModal(), 400);
   } else if (!isPlaying && !isSolved) {
-    dialogTitle.textContent = "Game Over!";
-    dialogMessage.textContent =
+    dialogEndTitle.textContent = "Game Over!";
+    dialogEndMessage.textContent =
       "You failed to solve the puzzle before the video ended.";
-    dialog.showModal();
+    dialogEnd.showModal();
+  }
+}
+
+function onVideoFrame() {
+  const blockWidth = Math.round(video.videoWidth / settings.splitWidth);
+  const blockHeight = Math.round(video.videoHeight / settings.splitHeight);
+  const canvasWidth = Math.round(video.clientWidth / settings.splitWidth);
+  const canvasHeight = Math.round(video.clientHeight / settings.splitHeight);
+  for (let { canvas, context, originalX, originalY } of blocks) {
+    if (canvas.width !== canvasWidth || canvas.height !== canvasHeight) {
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      context.font = "3rem Rubik, system-ui, sans-serif";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillStyle = "#7e9b94";
+    }
+    const originalIndex = originalY * settings.splitWidth + originalX;
+    context.drawImage(
+      video,
+      blockWidth * originalX,
+      blockHeight * originalY,
+      blockWidth,
+      blockHeight,
+      0,
+      0,
+      canvasWidth,
+      canvasHeight
+    );
+    if (settings.showNumbers === "yes") {
+      context.fillText(originalIndex, canvasWidth / 2, canvasHeight / 2);
+    }
+  }
+  if (!video.paused && !video.ended) {
+    video.requestVideoFrameCallback(onVideoFrame);
   }
 }
 
 function onCanvasClick(event) {
   const clickedBlock = blocks.find((block) => block.canvas === event.target);
-  const emptyBlock = blocks.find((block) => block.isEmpty);
+  const emptyBlock = blocks.at(-1);
   if (!isAdjacent(clickedBlock, emptyBlock)) return;
   document
     .startViewTransition(() => {
@@ -145,10 +172,24 @@ function onCanvasClick(event) {
     .finished.then(checkWin);
 }
 
+function onSettingChanged(event) {
+  const button = event.target;
+  const isPrev = button.classList.contains("prev");
+  const select = button.parentElement.querySelector("select");
+  const options = Array.from(select.querySelectorAll("option"));
+  const currentIndex = options.findIndex((option) => option.selected);
+  const newIndex =
+    (currentIndex + options.length + (isPrev ? -1 : 1)) % options.length;
+  options[newIndex].selected = true;
+  settings[select.id] = options[newIndex].value;
+  localStorage.setItem("settings", JSON.stringify(settings));
+  applySettings();
+}
+
 function shuffle() {
   let previousChoice = null;
-  const emptyBlock = blocks.find((block) => block.isEmpty);
-  for (let index = 0; index < SHUFFLE_STEPS; index += 1) {
+  const emptyBlock = blocks.at(-1);
+  for (let index = 0; index < settings.shuffleSteps; index += 1) {
     const choices = blocks.filter(
       (block) => isAdjacent(block, emptyBlock) && block !== previousChoice
     );
@@ -159,9 +200,24 @@ function shuffle() {
   document.startViewTransition(updateBlocks);
 }
 
+function newGame() {
+  dialogEnd.close();
+  dialogStart.showModal();
+}
+
+function startGame() {
+  dialogStart.close();
+  video.currentTime = 0;
+  video.play();
+  shuffle();
+}
+
 // TODO: remove test stuff
 window.stop = () => {
   video.pause();
 };
 
-setTimeout(shuffle, 2000);
+// start a demo/preview game behind the new game dialog
+applySettings();
+dialogStart.showModal();
+video.play();
