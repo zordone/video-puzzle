@@ -107,7 +107,7 @@ dialog {
 }
 dialog::backdrop {
   background: var(--mid);
-  opacity: 0.9;
+  opacity: 0.8;
 }
 
 button {
