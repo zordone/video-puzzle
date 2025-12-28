@@ -18,11 +18,18 @@
       <!-- blocks will be inserted here -->
     </div>
 
+    <div id="controls">
+      <button id="pause">Pause</button>
+      <button id="mute">Mute</button>
+      <button id="give-up">Give Up</button>
+      <span id="timer">-9:99</span>
+    </div>
+
     <dialog id="dialog-end" closedby="any">
       <p class="title"><!-- dynamic --></p>
       <p class="subtitle"><!-- dynamic --></p>
       <div class="buttons">
-        <button id="new-game">New Game</button>
+        <button id="new-game" autofocus>New Game</button>
         <button commandfor="dialog-end" command="close">Close</button>
       </div>
     </dialog>
@@ -107,7 +114,7 @@
       </div>
 
       <div class="buttons">
-        <button id="start-game">Start</button>
+        <button id="start-game" autofocus>Start</button>
         <button commandfor="dialog-start" command="close">Cancel</button>
       </div>
     </dialog>

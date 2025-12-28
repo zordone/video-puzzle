@@ -4,9 +4,12 @@ const blocks = [];
 const video = document.querySelector("video");
 video.onloadeddata = onVideoFrame;
 video.onplay = onVideoFrame;
-video.onended = checkWin;
+video.onended = checkWinOrLose;
+video.ontimeupdate = onTimeUpdate;
 
 const container = document.querySelector("#container");
+
+const timer = document.querySelector("#timer");
 
 const dialogEnd = document.querySelector("#dialog-end");
 const dialogEndTitle = dialogEnd.querySelector(".title");
@@ -16,6 +19,9 @@ const dialogStart = document.querySelector("#dialog-start");
 
 document.querySelector("#start-game").onclick = startGame;
 document.querySelector("#new-game").onclick = newGame;
+document.querySelector("#pause").onclick = pauseResumeGame;
+document.querySelector("#mute").onclick = muteUnmuteGame;
+document.querySelector("#give-up").onclick = giveUpGame;
 
 document.querySelectorAll(".step-select button").forEach((button) => {
   button.onclick = onSettingChanged;
@@ -70,6 +76,7 @@ function initBlocks() {
 function applySettings() {
   if (video.src !== settings.video) {
     video.src = settings.video;
+    video.play();
   }
   container.style = `--columns: ${settings.splitWidth}`;
   initBlocks();
@@ -91,22 +98,27 @@ function swapBlocks(blockA, blockB) {
 }
 
 function updateBlocks() {
+  const isPlaying = !video.paused && !video.ended;
   const emptyBlock = blocks.at(-1);
   for (let block of blocks) {
     const { canvas, currentX, currentY } = block;
     const order = currentY * settings.splitWidth + currentX;
     canvas.style.order = order;
-    canvas.classList.toggle("active", isAdjacent(block, emptyBlock));
+    canvas.classList.toggle(
+      "active",
+      isPlaying && isAdjacent(block, emptyBlock)
+    );
   }
 }
 
 function formatTime(seconds) {
+  seconds ||= 0;
   const mins = Math.floor(seconds / 60);
   const secs = String(Math.floor(seconds % 60)).padStart(2, "0");
   return `${mins}:${secs}`;
 }
 
-function checkWin() {
+function checkWinOrLose() {
   const isPlaying = !video.paused && !video.ended;
   const isSolved = blocks.every(
     ({ originalY, originalX, currentX, currentY }) =>
@@ -116,6 +128,8 @@ function checkWin() {
     const time = formatTime(video.currentTime);
     dialogEndTitle.textContent = "Congratulations!";
     dialogEndMessage.textContent = `You solved the puzzle in ${time}.`;
+    video.pause();
+    updateControls();
     setTimeout(() => dialogEnd.showModal(), 400);
   } else if (!isPlaying && !isSolved) {
     dialogEndTitle.textContent = "Game Over!";
@@ -160,7 +174,16 @@ function onVideoFrame() {
   }
 }
 
+function onTimeUpdate() {
+  const remaining = formatTime(video.duration - video.currentTime);
+  const text = `-${remaining}`;
+  if (timer.textContent !== text) {
+    timer.textContent = text;
+  }
+}
+
 function onCanvasClick(event) {
+  if (video.paused || video.ended) return;
   const clickedBlock = blocks.find((block) => block.canvas === event.target);
   const emptyBlock = blocks.at(-1);
   if (!isAdjacent(clickedBlock, emptyBlock)) return;
@@ -169,7 +192,7 @@ function onCanvasClick(event) {
       swapBlocks(emptyBlock, clickedBlock);
       updateBlocks();
     })
-    .finished.then(checkWin);
+    .finished.then(checkWinOrLose);
 }
 
 function onSettingChanged(event) {
@@ -209,15 +232,38 @@ function startGame() {
   dialogStart.close();
   video.currentTime = 0;
   video.play();
+  updateControls();
   shuffle();
 }
 
-// TODO: remove test stuff
-window.stop = () => {
+function updateControls() {
+  pause.textContent = video.paused ? "Resume" : "Pause";
+  mute.textContent = video.muted ? "Unmute" : "Mute";
+}
+
+function pauseResumeGame() {
+  if (video.paused) {
+    video.play();
+  } else {
+    video.pause();
+  }
+  updateControls();
+  updateBlocks();
+}
+
+function muteUnmuteGame() {
+  video.muted = !video.muted;
+  updateControls();
+}
+
+function giveUpGame() {
   video.pause();
-};
+  updateControls();
+  checkWinOrLose();
+}
 
 // start a demo/preview game behind the new game dialog
 applySettings();
 dialogStart.showModal();
 video.play();
+updateControls();

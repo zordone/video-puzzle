@@ -11,6 +11,9 @@
   overscroll-behavior: none;
   font: 16px "Knewave", system-ui, sans-serif;
   color: var(--dark);
+  &:has(dialog[open]) {
+    overflow: hidden;
+  }
 }
 
 :focus-visible {
@@ -96,7 +99,25 @@ canvas {
   }
 }
 
+#controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  width: min(90dvw, 1000px);
+  margin-bottom: 2rem;
+  button {
+    min-width: 6rem;
+  }
+  #timer {
+    flex: 1 0 auto;
+    text-align: end;
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 dialog {
+  overscroll-behavior: contain;
   background: var(--mid);
   color: var(--dark);
   box-shadow: 0 0 3rem var(--shadow);
@@ -108,6 +129,7 @@ dialog {
     display: flex;
     gap: 1rem;
     justify-content: center;
+    align-items: center;
     margin-top: 1rem;
   }
 }
@@ -164,7 +186,7 @@ button {
       justify-content: center;
       align-items: center;
       padding: 0;
-      min-width: 13rem; /* TODO: size to the longest option */
+      min-width: 13rem;
       &::picker-icon {
         display: none;
       }
