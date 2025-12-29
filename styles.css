@@ -16,16 +16,16 @@
   }
 }
 
-:focus-visible {
-  outline: 0.1rem solid var(--light);
-  outline-offset: -0.1rem;
-}
-
 /* only use border radius if we can apply it during the transition too */
 @supports (view-transition-group: contain) {
   :root {
     --radius: 0.75rem;
   }
+}
+
+:focus-visible {
+  outline: 0.1rem solid var(--light);
+  outline-offset: -0.1rem;
 }
 
 ::view-transition-group(container) {
@@ -45,9 +45,13 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 1rem;
   margin: 0;
   min-height: 100dvh;
   background: radial-gradient(var(--light), var(--dark));
+  > *:not(dialog, #container) {
+    width: min(90dvw, 1000px);
+  }
 }
 
 .title {
@@ -55,6 +59,7 @@ body {
   margin: 0;
   text-wrap-style: balance;
   text-align: center;
+  line-height: 1;
 }
 
 .subtitle {
@@ -66,7 +71,6 @@ body {
 }
 
 video {
-  width: min(90dvw, 1000px);
   opacity: 0;
   position: absolute;
   pointer-events: none;
@@ -77,7 +81,6 @@ video {
   display: inline-grid;
   grid-template-columns: repeat(var(--columns), 0fr);
   gap: 0.1rem;
-  margin: 2rem 0;
   background: var(--mid);
   box-shadow: 0 0 3rem var(--shadow);
   border-radius: var(--radius);
@@ -103,7 +106,6 @@ canvas {
   display: flex;
   gap: 1rem;
   align-items: center;
-  width: min(90dvw, 1000px);
   margin-bottom: 2rem;
   button {
     min-width: 6rem;
@@ -111,12 +113,28 @@ canvas {
   #timer {
     flex: 1 0 auto;
     text-align: end;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-variant-numeric: tabular-nums;
+  }
+  @media screen and (max-width: 480px) {
+    flex-wrap: wrap;
+    #timer {
+      order: -1;
+      text-align: center;
+      margin-top: -1rem;
+    }
+    > * {
+      flex: 1 0 100%;
+    }
   }
 }
 
 dialog {
+  &[open] {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
   overscroll-behavior: contain;
   background: var(--mid);
   color: var(--dark);
@@ -158,20 +176,10 @@ button {
   grid-template-columns: auto 1fr;
   gap: 0.5rem 1rem;
   margin-top: 1rem;
-
-  @media screen and (max-width: 480px) {
-    grid-template-columns: 1fr;
-    gap: 0;
-    label {
-      margin-top: 0.5rem;
-    }
-  }
-
   label {
     justify-self: start;
     align-self: center;
   }
-
   .step-select {
     display: flex;
     border-radius: var(--radius);
@@ -204,6 +212,13 @@ button {
       &.next {
         border-radius: 0 var(--radius) var(--radius) 0;
       }
+    }
+  }
+  @media screen and (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0;
+    label {
+      margin-top: 0.5rem;
     }
   }
 }

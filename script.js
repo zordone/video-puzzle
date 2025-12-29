@@ -1,10 +1,13 @@
 const blocks = [];
+let isStarted = false;
 
 // init dom
+window.onresize = onResize;
+
 const video = document.querySelector("video");
 video.onloadeddata = onVideoFrame;
 video.onplay = onVideoFrame;
-video.onended = checkWinOrLose;
+video.onended = onVideoEnded;
 video.ontimeupdate = onTimeUpdate;
 
 const container = document.querySelector("#container");
@@ -19,9 +22,15 @@ const dialogStart = document.querySelector("#dialog-start");
 
 document.querySelector("#start-game").onclick = startGame;
 document.querySelector("#new-game").onclick = newGame;
-document.querySelector("#pause").onclick = pauseResumeGame;
-document.querySelector("#mute").onclick = muteUnmuteGame;
-document.querySelector("#give-up").onclick = giveUpGame;
+
+const pause = document.querySelector("#pause");
+pause.onclick = pauseResumeGame;
+
+const mute = document.querySelector("#mute");
+mute.onclick = muteUnmuteGame;
+
+const giveUp = document.querySelector("#give-up");
+giveUp.onclick = giveUpNewGame;
 
 document.querySelectorAll(".step-select button").forEach((button) => {
   button.onclick = onSettingChanged;
@@ -47,17 +56,19 @@ Object.entries(settings).forEach(([key, value]) => {
 });
 
 function initBlocks() {
+  const { splitWidth, splitHeight } = settings;
   blocks.length = 0;
   container.innerHTML = "";
-  const lastIndex = settings.splitWidth * settings.splitHeight - 1;
-  for (let y = 0; y < settings.splitHeight; y += 1) {
-    for (let x = 0; x < settings.splitWidth; x += 1) {
-      const index = y * settings.splitWidth + x;
+  const lastIndex = splitWidth * splitHeight - 1;
+  for (let y = 0; y < splitHeight; y += 1) {
+    for (let x = 0; x < splitWidth; x += 1) {
+      const index = y * splitWidth + x;
+      const isEmpty = index === lastIndex;
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
       canvas.width = 0;
       canvas.height = 0;
-      canvas.className = index === lastIndex ? "empty" : "";
+      canvas.className = isEmpty ? "empty" : "";
       canvas.onclick = onCanvasClick;
       container.appendChild(canvas);
       blocks.push({
@@ -68,17 +79,19 @@ function initBlocks() {
         originalY: y,
         currentX: x,
         currentY: y,
+        isEmpty,
       });
     }
   }
 }
 
 function applySettings() {
-  if (video.src !== settings.video) {
-    video.src = settings.video;
+  const { video: src, splitWidth } = settings;
+  if (video.src !== src) {
+    video.src = src;
     video.play();
   }
-  container.style = `--columns: ${settings.splitWidth}`;
+  container.style = `--columns: ${splitWidth}`;
   initBlocks();
   updateBlocks();
 }
@@ -98,7 +111,7 @@ function swapBlocks(blockA, blockB) {
 }
 
 function updateBlocks() {
-  const isPlaying = !video.paused && !video.ended;
+  const isPlaying = isStarted && !video.paused && !video.ended;
   const emptyBlock = blocks.at(-1);
   for (let block of blocks) {
     const { canvas, currentX, currentY } = block;
@@ -118,20 +131,22 @@ function formatTime(seconds) {
   return `${mins}:${secs}`;
 }
 
-function checkWinOrLose() {
-  const isPlaying = !video.paused && !video.ended;
+function checkWinOrLose(giveUp = false) {
   const isSolved = blocks.every(
     ({ originalY, originalX, currentX, currentY }) =>
       currentX === originalX && currentY === originalY
   );
-  if (isPlaying && isSolved) {
+  if (isStarted && isSolved) {
     const time = formatTime(video.currentTime);
     dialogEndTitle.textContent = "Congratulations!";
     dialogEndMessage.textContent = `You solved the puzzle in ${time}.`;
     video.pause();
+    isStarted = false;
     updateControls();
+    updateBlocks();
     setTimeout(() => dialogEnd.showModal(), 400);
-  } else if (!isPlaying && !isSolved) {
+  } else if (giveUp || (isStarted && video.ended && !isSolved)) {
+    isStarted = false;
     dialogEndTitle.textContent = "Game Over!";
     dialogEndMessage.textContent =
       "You failed to solve the puzzle before the video ended.";
@@ -140,33 +155,40 @@ function checkWinOrLose() {
 }
 
 function onVideoFrame() {
-  const blockWidth = Math.round(video.videoWidth / settings.splitWidth);
-  const blockHeight = Math.round(video.videoHeight / settings.splitHeight);
-  const canvasWidth = Math.round(video.clientWidth / settings.splitWidth);
-  const canvasHeight = Math.round(video.clientHeight / settings.splitHeight);
-  for (let { canvas, context, originalX, originalY } of blocks) {
-    if (canvas.width !== canvasWidth || canvas.height !== canvasHeight) {
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-      context.font = "3rem Rubik, system-ui, sans-serif";
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.fillStyle = "#7e9b94";
-    }
-    const originalIndex = originalY * settings.splitWidth + originalX;
-    context.drawImage(
-      video,
-      blockWidth * originalX,
-      blockHeight * originalY,
-      blockWidth,
-      blockHeight,
-      0,
-      0,
-      canvasWidth,
-      canvasHeight
-    );
-    if (settings.showNumbers === "yes") {
-      context.fillText(originalIndex, canvasWidth / 2, canvasHeight / 2);
+  if (video.readyState >= 2) {
+    const { splitWidth, splitHeight, showNumbers } = settings;
+    const blockWidth = Math.round(video.videoWidth / splitWidth);
+    const blockHeight = Math.round(video.videoHeight / splitHeight);
+    const canvasWidth = Math.round(video.clientWidth / splitWidth);
+    const canvasHeight = Math.round(video.clientHeight / splitHeight);
+    for (let { canvas, context, originalX, originalY, isEmpty } of blocks) {
+      if (canvas.width !== canvasWidth || canvas.height !== canvasHeight) {
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        context.font = "2.2rem Knewave, system-ui, sans-serif";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+      }
+      const originalIndex = originalY * splitWidth + originalX;
+      context.drawImage(
+        video,
+        blockWidth * originalX,
+        blockHeight * originalY,
+        blockWidth,
+        blockHeight,
+        0,
+        0,
+        canvasWidth,
+        canvasHeight
+      );
+      if (showNumbers === "yes" && !isEmpty) {
+        const x = canvasWidth / 2;
+        const y = canvasHeight / 2 + 3;
+        context.fillStyle = "#283e39";
+        context.fillText(originalIndex, x + 1, y + 1);
+        context.fillStyle = "#7e9b94";
+        context.fillText(originalIndex, x, y);
+      }
     }
   }
   if (!video.paused && !video.ended) {
@@ -174,16 +196,28 @@ function onVideoFrame() {
   }
 }
 
+function onVideoEnded() {
+  checkWinOrLose();
+  isStarted = false;
+  updateControls();
+}
+
 function onTimeUpdate() {
   const remaining = formatTime(video.duration - video.currentTime);
-  const text = `-${remaining}`;
+  const text = `- ${remaining}`;
   if (timer.textContent !== text) {
     timer.textContent = text;
   }
 }
 
+function onResize() {
+  if (video.paused || video.ended) {
+    onVideoFrame();
+  }
+}
+
 function onCanvasClick(event) {
-  if (video.paused || video.ended) return;
+  if (!isStarted || video.paused || video.ended) return;
   const clickedBlock = blocks.find((block) => block.canvas === event.target);
   const emptyBlock = blocks.at(-1);
   if (!isAdjacent(clickedBlock, emptyBlock)) return;
@@ -232,17 +266,19 @@ function startGame() {
   dialogStart.close();
   video.currentTime = 0;
   video.play();
-  updateControls();
   shuffle();
+  isStarted = true;
+  updateControls();
 }
 
 function updateControls() {
-  pause.textContent = video.paused ? "Resume" : "Pause";
+  pause.textContent = video.ended ? "Play" : video.paused ? "Resume" : "Pause";
   mute.textContent = video.muted ? "Unmute" : "Mute";
+  giveUp.textContent = isStarted ? "Give Up" : "New Game";
 }
 
 function pauseResumeGame() {
-  if (video.paused) {
+  if (video.paused || video.ended) {
     video.play();
   } else {
     video.pause();
@@ -256,10 +292,16 @@ function muteUnmuteGame() {
   updateControls();
 }
 
-function giveUpGame() {
-  video.pause();
-  updateControls();
-  checkWinOrLose();
+function giveUpNewGame() {
+  if (isStarted) {
+    isStarted = false;
+    video.pause();
+    updateControls();
+    updateBlocks();
+    checkWinOrLose(true);
+  } else {
+    newGame();
+  }
 }
 
 // start a demo/preview game behind the new game dialog
