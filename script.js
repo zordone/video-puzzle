@@ -20,16 +20,16 @@ const dialogEndMessage = dialogEnd.querySelector(".subtitle");
 
 const dialogStart = document.querySelector("#dialog-start");
 
-document.querySelector("#start-game").onclick = startGame;
-document.querySelector("#new-game").onclick = newGame;
+document.querySelector("#startGame").onclick = startGame;
+document.querySelector("#newGame").onclick = newGame;
 
-const pause = document.querySelector("#pause");
+const pause = document.querySelector("#pauseGame");
 pause.onclick = pauseResumeGame;
 
-const mute = document.querySelector("#mute");
+const mute = document.querySelector("#muteGame");
 mute.onclick = muteUnmuteGame;
 
-const giveUp = document.querySelector("#give-up");
+const giveUp = document.querySelector("#giveUpGame");
 giveUp.onclick = giveUpNewGame;
 
 document.querySelectorAll(".step-select button").forEach((button) => {
@@ -42,7 +42,7 @@ const defaultSettings = {
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
   splitWidth: "4",
   splitHeight: "3",
-  shuffleSteps: "100",
+  shuffleSteps: "90",
   showNumbers: "yes",
 };
 
@@ -54,6 +54,19 @@ Object.entries(settings).forEach(([key, value]) => {
   const select = document.getElementById(key);
   select.value = value;
 });
+
+function isAdjacent(blockA, blockB) {
+  const xDiff = Math.abs(blockA.currentX - blockB.currentX);
+  const yDiff = Math.abs(blockA.currentY - blockB.currentY);
+  return (xDiff === 1 && yDiff === 0) || (xDiff === 0 && yDiff === 1);
+}
+
+function formatTime(seconds) {
+  seconds ||= 0;
+  const mins = Math.floor(seconds / 60);
+  const secs = String(Math.floor(seconds % 60)).padStart(2, "0");
+  return `${mins}:${secs}`;
+}
 
 function initBlocks() {
   const { splitWidth, splitHeight } = settings;
@@ -85,31 +98,6 @@ function initBlocks() {
   }
 }
 
-function applySettings() {
-  const { video: src, splitWidth } = settings;
-  if (video.src !== src) {
-    video.src = src;
-    video.play();
-  }
-  container.style = `--columns: ${splitWidth}`;
-  initBlocks();
-  updateBlocks();
-}
-
-function isAdjacent(blockA, blockB) {
-  const xDiff = Math.abs(blockA.currentX - blockB.currentX);
-  const yDiff = Math.abs(blockA.currentY - blockB.currentY);
-  return (xDiff === 1 && yDiff === 0) || (xDiff === 0 && yDiff === 1);
-}
-
-function swapBlocks(blockA, blockB) {
-  const { currentX: tempX, currentY: tempY } = blockA;
-  blockA.currentX = blockB.currentX;
-  blockA.currentY = blockB.currentY;
-  blockB.currentX = tempX;
-  blockB.currentY = tempY;
-}
-
 function updateBlocks() {
   const isPlaying = isStarted && !video.paused && !video.ended;
   const emptyBlock = blocks.at(-1);
@@ -124,11 +112,23 @@ function updateBlocks() {
   }
 }
 
-function formatTime(seconds) {
-  seconds ||= 0;
-  const mins = Math.floor(seconds / 60);
-  const secs = String(Math.floor(seconds % 60)).padStart(2, "0");
-  return `${mins}:${secs}`;
+function swapBlocks(blockA, blockB) {
+  const { currentX: tempX, currentY: tempY } = blockA;
+  blockA.currentX = blockB.currentX;
+  blockA.currentY = blockB.currentY;
+  blockB.currentX = tempX;
+  blockB.currentY = tempY;
+}
+
+function applySettings() {
+  const { video: src, splitWidth } = settings;
+  if (video.src !== src) {
+    video.src = src;
+    video.play();
+  }
+  container.style = `--columns: ${splitWidth}`;
+  initBlocks();
+  updateBlocks();
 }
 
 function checkWinOrLose(giveUp = false) {
@@ -157,15 +157,15 @@ function checkWinOrLose(giveUp = false) {
 function onVideoFrame() {
   if (video.readyState >= 2) {
     const { splitWidth, splitHeight, showNumbers } = settings;
-    const blockWidth = Math.round(video.videoWidth / splitWidth);
-    const blockHeight = Math.round(video.videoHeight / splitHeight);
-    const canvasWidth = Math.round(video.clientWidth / splitWidth);
-    const canvasHeight = Math.round(video.clientHeight / splitHeight);
+    const blockWidth = Math.trunc(video.videoWidth / splitWidth);
+    const blockHeight = Math.trunc(video.videoHeight / splitHeight);
+    const canvasWidth = Math.trunc(video.clientWidth / splitWidth);
+    const canvasHeight = Math.trunc(video.clientHeight / splitHeight);
     for (let { canvas, context, originalX, originalY, isEmpty } of blocks) {
       if (canvas.width !== canvasWidth || canvas.height !== canvasHeight) {
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
-        context.font = "2.2rem Knewave, system-ui, sans-serif";
+        context.font = "2rem Knewave, system-ui, sans-serif";
         context.textAlign = "center";
         context.textBaseline = "middle";
       }
@@ -257,6 +257,12 @@ function shuffle() {
   document.startViewTransition(updateBlocks);
 }
 
+function updateControls() {
+  pause.textContent = video.ended ? "Play" : video.paused ? "Resume" : "Pause";
+  mute.textContent = video.muted ? "Unmute" : "Mute";
+  giveUp.textContent = isStarted ? "Give Up" : "New Game";
+}
+
 function newGame() {
   dialogEnd.close();
   dialogStart.showModal();
@@ -269,12 +275,6 @@ function startGame() {
   shuffle();
   isStarted = true;
   updateControls();
-}
-
-function updateControls() {
-  pause.textContent = video.ended ? "Play" : video.paused ? "Resume" : "Pause";
-  mute.textContent = video.muted ? "Unmute" : "Mute";
-  giveUp.textContent = isStarted ? "Give Up" : "New Game";
 }
 
 function pauseResumeGame() {

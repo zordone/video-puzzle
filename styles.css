@@ -1,12 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Knewave&family=Rubik&display=swap");
 
 :root {
-  --radius: 0;
+  --radius: 0.75rem;
+  --radius-video: 0;
   --dark: #283e39;
   --mid: #7e9b94;
   --light: #cbf6ec;
   --shadow: rgb(from var(--dark) r g b / 0.8);
 
+  background: #7e9b94;
   accent-color: var(--dark);
   overscroll-behavior: none;
   font: 16px "Knewave", system-ui, sans-serif;
@@ -19,7 +21,7 @@
 /* only use border radius if we can apply it during the transition too */
 @supports (view-transition-group: contain) {
   :root {
-    --radius: 0.75rem;
+    --radius-video: 0.75rem;
   }
 }
 
@@ -30,7 +32,7 @@
 
 ::view-transition-group(container) {
   box-shadow: 0 0 3rem var(--shadow);
-  border-radius: var(--radius);
+  border-radius: var(--radius-video);
   overflow: clip;
 }
 
@@ -83,7 +85,7 @@ video {
   gap: 0.1rem;
   background: var(--mid);
   box-shadow: 0 0 3rem var(--shadow);
-  border-radius: var(--radius);
+  border-radius: var(--radius-video);
   overflow: clip;
   view-transition-name: container;
   view-transition-group: contain;
@@ -98,7 +100,7 @@ canvas {
   }
   &.empty {
     z-index: 0;
-    opacity: 0.2;
+    opacity: 0.15;
   }
 }
 
@@ -186,11 +188,15 @@ button {
     box-shadow: 0 0 1rem var(--shadow);
     overflow: hidden;
     select {
+      appearance: none;
+      appearance: base-select;
       flex: 1 0 auto;
+      background: none;
+      font-family: inherit;
+      color: inherit;
       font-size: 1.5rem;
       border: none;
       border-radius: 0;
-      appearance: base-select;
       justify-content: center;
       align-items: center;
       padding: 0;

@@ -13,15 +13,15 @@
       Slide the pieces adjacent to the blank space to solve the puzzle before
       the video ends.
     </p>
-    <video muted></video>
+    <video playsinline muted disablepictureinpicture></video>
     <div id="container">
       <!-- blocks will be inserted here -->
     </div>
 
     <div id="controls">
-      <button id="pause">Pause</button>
-      <button id="mute">Mute</button>
-      <button id="give-up">Give Up</button>
+      <button id="pauseGame">Pause</button>
+      <button id="muteGame">Mute</button>
+      <button id="giveUpGame">Give Up</button>
       <span id="timer">- 0:00</span>
     </div>
 
@@ -29,7 +29,7 @@
       <p class="title"></p>
       <p class="subtitle"></p>
       <div class="buttons">
-        <button id="new-game" autofocus>New Game</button>
+        <button id="newGame" autofocus>New Game</button>
         <button commandfor="dialog-end" command="close">Close</button>
       </div>
     </dialog>
@@ -43,6 +43,7 @@
           <select id="video" inert>
             <option
               value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+              selected
             >
               Big Buck Bunny
             </option>
@@ -53,9 +54,13 @@
             </option>
             <option
               value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
-              selected
             >
               Sintel
+            </option>
+            <option
+              value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
+            >
+              Tears of Steel
             </option>
           </select>
           <button class="next">⏵</button>
@@ -114,7 +119,7 @@
       </div>
 
       <div class="buttons">
-        <button id="start-game" autofocus>Start</button>
+        <button id="startGame" autofocus>Start</button>
         <button commandfor="dialog-start" command="close">Cancel</button>
       </div>
     </dialog>
