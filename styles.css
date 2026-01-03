@@ -37,7 +37,7 @@
 }
 
 ::view-transition-group(*) {
-  animation-duration: 200ms;
+  animation-duration: 150ms;
   animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
   overflow: clip;
 }

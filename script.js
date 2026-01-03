@@ -1,5 +1,6 @@
 const blocks = [];
 let isStarted = false;
+let frameCallbackId = null;
 
 // init dom
 window.onresize = onResize;
@@ -9,6 +10,13 @@ video.onloadeddata = onVideoFrame;
 video.onplay = onVideoFrame;
 video.onended = onVideoEnded;
 video.ontimeupdate = onTimeUpdate;
+
+const soundSlide = document.querySelector("#soundSlide");
+soundSlide.volume = 0.05;
+const soundWin = document.querySelector("#soundWin");
+soundWin.volume = 0.13;
+const soundLose = document.querySelector("#soundLose");
+soundLose.volume = 0.05;
 
 const container = document.querySelector("#container");
 
@@ -145,12 +153,16 @@ function checkWinOrLose(giveUp = false) {
     updateControls();
     updateBlocks();
     setTimeout(() => dialogEnd.showModal(), 400);
+    soundWin.play();
   } else if (giveUp || (isStarted && video.ended && !isSolved)) {
     isStarted = false;
+    updateControls();
+    updateBlocks();
     dialogEndTitle.textContent = "Game Over!";
     dialogEndMessage.textContent =
       "You failed to solve the puzzle before the video ended.";
     dialogEnd.showModal();
+    soundLose.play();
   }
 }
 
@@ -192,7 +204,8 @@ function onVideoFrame() {
     }
   }
   if (!video.paused && !video.ended) {
-    video.requestVideoFrameCallback(onVideoFrame);
+    video.cancelVideoFrameCallback(frameCallbackId);
+    frameCallbackId = video.requestVideoFrameCallback(onVideoFrame);
   }
 }
 
@@ -225,6 +238,7 @@ function onCanvasClick(event) {
     .startViewTransition(() => {
       swapBlocks(emptyBlock, clickedBlock);
       updateBlocks();
+      soundSlide.play();
     })
     .finished.then(checkWinOrLose);
 }
@@ -250,7 +264,7 @@ function shuffle() {
     const choices = blocks.filter(
       (block) => isAdjacent(block, emptyBlock) && block !== previousChoice
     );
-    const chosenBlock = choices[Math.floor(Math.random() * choices.length)];
+    const chosenBlock = choices[Math.trunc(Math.random() * choices.length)];
     swapBlocks(emptyBlock, chosenBlock);
     previousChoice = chosenBlock;
   }
@@ -289,6 +303,9 @@ function pauseResumeGame() {
 
 function muteUnmuteGame() {
   video.muted = !video.muted;
+  soundSlide.muted = video.muted;
+  soundWin.muted = video.muted;
+  soundLose.muted = video.muted;
   updateControls();
 }
 
